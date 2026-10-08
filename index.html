@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#6366f1">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Expense POS">
+    <link rel="manifest" href="../Documents/HTML Code/manifest.json">
+    <link rel="icon" href="../Documents/HTML Code/icon-192.png">
+    <link rel="apple-touch-icon" href="../Documents/HTML Code/icon-192.png">
+    <title>Enterprise Expense POS System</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        /* --- Design System Tokens --- */
+        :root {
+            --bg-main: #f8fafc;
+            --bg-card: #ffffff;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --brand-primary: #6366f1;
+            --brand-hover: #4f46e5;
+            --brand-success: #10b981;
+            --brand-success-hover: #059669;
+            --brand-info: #0ea5e9;
+            --brand-info-hover: #0284c7;
+            --brand-danger: #ef4444;
+            --border-color: #e2e8f0;
+            --radius: 8px;
+            --font-monospace: 'Courier New', Courier, monospace;
+        }
+
+        /* --- Global Reset & App Layout --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { -webkit-text-size-adjust: 100%; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            padding: 40px 20px;
+            line-height: 1.5;
+        }
+        
+        .workspace {
+            max-width: 1140px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 40px;
+            align-items: start;
+        }
+
+        /* --- Input Control Panel Layout --- */
+        .panel {
+            background: var(--bg-card);
+            padding: 30px;
+            border-radius: var(--radius);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            border: 1px solid var(--border-color);
+            min-width: 0;
+        }
+        .panel-title {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 24px;
+            color: var(--text-primary);
+            letter-spacing: -0.5px;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 2.2fr 1.1fr 1.3fr;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .discount-row {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        
+        /* Functional Toggles Controls */
+        .toggle-row {
+            background: #f8fafc;
+            padding: 12px 16px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .toggle-switch {
+            width: 42px;
+            height: 22px;
+            flex-shrink: 0;
+            background-color: #cbd5e1;
+            border-radius: 11px;
+            position: relative;
+            transition: background-color 0.2s;
+        }
+        .toggle-switch::before {
+            content: "";
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background-color: white;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+        }
+        .toggle-input:checked + .toggle-switch {
+            background-color: var(--brand-success);
+        }
+        .toggle-input:checked + .toggle-switch::before {
+            transform: translateX(20px);
+        }
+
+        .data-ops-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 20px;
+            background: #f1f5f9;
+            padding: 12px;
+            border-radius: 6px;
+        }
+        .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 0;
+        }
+        .field-group label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        .input-control {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            background-color: #fff;
+            color: var(--text-primary);
+        }
+        .input-control:focus {
+            border-color: var(--brand-primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+        }
+
+        /* --- Custom Interactive Ledger List --- */
+        .ledger-container {
+            margin-top: 20px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 25px;
+        }
+        .table-scroll {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .ledger-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            text-align: left;
+        }
+        .ledger-table th {
+            color: var(--text-secondary);
+            font-weight: 600;
+            padding: 10px;
+            border-bottom: 2px solid var(--border-color);
+        }
+        .ledger-table td {
+            padding: 12px 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .ledger-table .empty-row td {
+            text-align: center;
+            color: var(--text-secondary);
+            padding: 24px 10px;
+        }
+        .btn-delete {
+            background: transparent;
+            color: var(--brand-danger);
+            border: none;
+            cursor: pointer;
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        .btn-delete:hover {
+            background: rgba(239, 68, 68, 0.08);
+        }
+
+        /* --- Buttons System --- */
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.15s, transform 0.1s;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn-primary { background-color: var(--brand-primary); color: white; width: 100%; }
+        .btn-primary:hover { background-color: var(--brand-hover); }
+        
+        .btn-outline {
+            background-color: #ffffff;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 8px 16px;
+            font-size: 13px;
+        }
+        .btn-outline:hover {
+            background-color: #f8fafc;
+            color: var(--text-primary);
+        }
+        .btn-outline-danger { color: var(--brand-danger); border-color: #fecaca; }
+        .btn-outline-danger:hover { background-color: #fef2f2; color: var(--brand-danger); }
+
+        .button-group-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        .btn-success { background-color: var(--brand-success); color: white; font-size: 15px;}
+        .btn-success:hover { background-color: var(--brand-success-hover); }
+        .btn-info { background-color: var(--brand-info); color: white; font-size: 15px;}
+        .btn-info:hover { background-color: var(--brand-info-hover); }
+
+        /* --- Live-Sticky Thermal Canvas View --- */
+        .sticky-viewport {
+            position: sticky;
+            top: 40px;
+        }
+        .thermal-canvas {
+            width: 80mm;
+            max-width: 100%;
+            background: #ffffff;
+            padding: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            font-family: var(--font-monospace);
+            font-size: 12px;
+            color: #000000;
+            line-height: 1.35;
+            position: relative;
+        }
+        .receipt-center { text-align: center; }
+        .receipt-bold { font-weight: bold; }
+        .receipt-divider {
+            border-top: 1px dashed #000000;
+            margin: 10px 0;
+            position: relative;
+            z-index: 2;
+        }
+        
+        /* Inline Editable Typography Indicator */
+        .editable-text {
+            outline: none;
+            transition: background-color 0.2s;
+            border: 1px transparent dashed;
+        }
+        .editable-text:hover {
+            background-color: #f0fdf4;
+            border-color: #bbf7d0;
+            cursor: text;
+        }
+        .editable-text:focus {
+            background-color: #f0fdf4;
+            border: 1px solid var(--brand-success);
+        }
+
+        .receipt-header { position: relative; z-index: 2; }
+        .receipt-header h3 { font-size: 16px; margin-bottom: 4px; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px; display: block;}
+        .receipt-header p { font-size: 11px; margin-bottom: 2px; text-transform: uppercase; display: block;}
+        
+        .meta-data-block { position: relative; z-index: 2; }
+        .receipt-split {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            margin: 2px 0;
+        }
+        
+        /* Structural Matrix Blueprint for Receipt Layout */
+        .matrix-container {
+            position: relative;
+            min-height: 140px;
+        }
+        .matrix-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            position: relative;
+            z-index: 2;
+        }
+        .matrix-table th { padding-bottom: 6px; border-bottom: 1px dashed #000000; font-weight: bold;}
+        .matrix-table td { padding: 4px 0; vertical-align: top; }
+        
+        .m-sr   { width: 10%; text-align: left; }
+        .m-desc { width: 38%; text-align: left; word-break: break-all; padding-right: 2px; }
+        .m-qty  { width: 16%; text-align: center; }
+        .m-rate { width: 16%; text-align: right; }
+        .m-total{ width: 20%; text-align: right; }
+
+        .summary-group { font-size: 11px; position: relative; z-index: 2; }
+        .summary-group .net-payable { font-size: 13px; font-weight: bold; margin-top: 4px; border-top: 1px solid #000; padding-top: 4px;}
+
+        /* --- "PAID" STAMP STYLING --- */
+        .receipt-stamp-overlay {
+            display: none;
+            position: absolute;
+            top: 70%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-15deg);
+            width: 130px;
+            height: 130px;
+            border: 3px solid #dc2626;
+            border-radius: 50%;
+            opacity: 0.30;
+            z-index: 1;
+            pointer-events: none;
+            background-color: transparent;
+            font-family: 'Arial Black', Impact, sans-serif;
+            color: #dc2626;
+            box-sizing: border-box;
+            padding: 4px;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        .stamp-ring-inner {
+            width: 100%;
+            height: 100%;
+            border: 1px solid #dc2626;
+            border-radius: 50%;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .stamp-text-top {
+            position: absolute;
+            top: 8px;
+            font-size: 8px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-align: center;
+            width: 100%;
+        }
+        .stamp-text-bottom {
+            position: absolute;
+            bottom: 8px;
+            font-size: 8px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-align: center;
+            width: 100%;
+        }
+        .stamp-banner-box {
+            width: 124%;
+            background: #ffffff;
+            border-top: 2px solid #dc2626;
+            border-bottom: 2px solid #dc2626;
+            text-align: center;
+            padding: 2px 0;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .stamp-main-title {
+            font-size: 26px;
+            font-weight: 900;
+            line-height: 1;
+            letter-spacing: 1px;
+            margin: 0;
+            text-transform: uppercase;
+        }
+
+        .receipt-footer-msg { position: relative; z-index: 2; }
+
+        /* --- TABLET & MOBILE LAYOUT --- */
+        @media (max-width: 900px) {
+            body {
+                padding: calc(12px + env(safe-area-inset-top)) 12px calc(96px + env(safe-area-inset-bottom));
+            }
+            .workspace {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            .panel { padding: 18px; }
+            .panel-title { font-size: 19px; margin-bottom: 16px; }
+            .sticky-viewport { position: static; }
+            .thermal-canvas { margin: 0 auto; }
+
+            /* Print + Screenshot buttons always visible at the bottom */
+            .button-group-row {
+                position: fixed;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                z-index: 50;
+                margin: 0;
+                padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+                background: rgba(255, 255, 255, 0.97);
+                border-top: 1px solid var(--border-color);
+                box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.06);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .form-row { grid-template-columns: 1fr 1fr; gap: 12px; }
+            .form-row .field-group:first-child { grid-column: 1 / -1; }
+            .discount-row { grid-template-columns: 1fr 1fr; gap: 12px; }
+            .input-control { font-size: 16px; padding: 12px; } /* 16px stops iPhone auto-zoom */
+            .data-ops-row { gap: 8px; padding: 10px; }
+            .data-ops-row .btn { flex: 1 1 auto; }
+            .btn { padding: 14px 16px; }
+            .btn-outline { padding: 10px 12px; }
+            .toggle-row span { font-size: 13px !important; }
+            .ledger-table { font-size: 13px; }
+            .ledger-table th, .ledger-table td { padding: 10px 6px; white-space: nowrap; }
+            .ledger-table td:first-child { white-space: normal; min-width: 100px; }
+            .btn-delete { padding: 8px 10px; font-size: 13px; }
+        }
+
+        /* --- PRINT DRIVER EMULATION STYLES --- */
+        @media print {
+            .panel, .button-group-row, .btn-delete {
+                display: none !important;
+            }
+            body {
+                background: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            .workspace {
+                display: block !important;
+                margin: 0 !important;
+                max-width: 100% !important;
+            }
+            .sticky-viewport {
+                position: static !important;
+            }
+            .thermal-canvas {
+                width: 100% !important;
+                max-width: 100% !important;
+                box-shadow: none !important;
+                padding: 4mm 2mm !important;
+            }
+            .editable-text:hover, .editable-text {
+                border: none !important;
+                background: none !important;
+            }
+            @page {
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="workspace">
+    
+    <main class="panel">
+        <h2 class="panel-title">Expense Log Management System</h2>
+        
+        <div class="data-ops-row">
+            <button type="button" class="btn btn-outline" onclick="app.exportToCSV()">Export CSV</button>
+            <button type="button" class="btn btn-outline" onclick="document.getElementById('csv-file-input').click()">Import CSV</button>
+            <button type="button" class="btn btn-outline btn-outline-danger" onclick="app.newBill()">New Bill</button>
+            <input type="file" id="csv-file-input" accept=".csv,text/csv,text/comma-separated-values" style="display: none;" onchange="app.importFromCSV(this)">
+        </div>
+
+        <form id="expense-form" onsubmit="event.preventDefault(); app.handleSubmission();">
+            <div class="form-row">
+                <div class="field-group">
+                    <label for="inp-desc">Item Description</label>
+                    <input type="text" id="inp-desc" class="input-control" placeholder="e.g., Tomatoes / Coffee" autocomplete="off" enterkeyhint="next" required>
+                </div>
+                <div class="field-group">
+                    <label for="inp-qty">Qty / Weight</label>
+                    <input type="number" id="inp-qty" class="input-control" step="any" min="0.001" inputmode="decimal" enterkeyhint="next" placeholder="e.g., 0.250" required>
+                </div>
+                <div class="field-group">
+                    <label for="inp-price">Rate / Price (₹)</label>
+                    <input type="number" id="inp-price" class="input-control" step="0.01" min="0" inputmode="decimal" enterkeyhint="done" placeholder="Per Unit/Kg" required>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Commit Entry to Ledger</button>
+        </form>
+
+        <div class="ledger-container">
+            <div class="discount-row">
+                <div class="field-group">
+                    <label for="inp-discount-val">Apply Balance Discount</label>
+                    <input type="number" id="inp-discount-val" class="input-control" min="0" step="any" inputmode="decimal" value="0" oninput="app.syncUserInterface()">
+                </div>
+                <div class="field-group">
+                    <label for="inp-discount-type">Discount Type</label>
+                    <select id="inp-discount-type" class="input-control" onchange="app.syncUserInterface()">
+                        <option value="percentage">Percentage (%)</option>
+                        <option value="fixed">Fixed Amount (₹)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="toggle-row">
+                <span style="font-size: 14px; font-weight: 600; color: var(--text-secondary);">Enable "PAID" Layer Stamp</span>
+                <label class="toggle-container">
+                    <input type="checkbox" id="inp-stamp-toggle" class="toggle-input" style="display: none;" onchange="app.toggleStampLayer(this.checked)">
+                    <div class="toggle-switch"></div>
+                </label>
+            </div>
+
+            <div class="table-scroll">
+                <table class="ledger-table">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Qty</th>
+                            <th>Rate/Price</th>
+                            <th>Total</th>
+                            <th style="text-align: right;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="app-ledger-rows"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="button-group-row">
+            <button type="button" class="btn btn-success" onclick="window.print()">Print Receipt</button>
+            <button type="button" class="btn btn-info" onclick="app.generateCapture()">Screenshot / Share</button>
+        </div>
+    </main>
+
+    <aside class="sticky-viewport">
+        <div class="thermal-canvas" id="printable-receipt-canvas">
+            <div class="receipt-header receipt-center">
+                <h3 class="editable-text" contenteditable="true" title="Click to Edit Heading">Daily Expense Log</h3>
+                <p class="editable-text" contenteditable="true" title="Click to Edit Subtitle">G.T. Road, Putlighar</p>
+                <p class="editable-text" contenteditable="true" title="Click to Edit Location">Amritsar, Punjab</p>
+            </div>
+            
+            <div class="receipt-divider"></div>
+            
+            <div class="meta-data-block">
+                <div class="receipt-split"><span>Ref No:</span><span id="rec-id" class="receipt-bold">N/A</span></div>
+                <div class="receipt-split"><span>Date:</span><span id="rec-date" class="editable-text receipt-bold" contenteditable="true" title="Click to Edit Date">00/00/0000</span></div>
+                <div class="receipt-split"><span>Time:</span><span id="rec-time" class="editable-text" contenteditable="true" title="Click to Edit Time">00:00:00</span></div>
+            </div>
+            
+            <div class="receipt-divider"></div>
+            
+            <div class="matrix-container">
+                <div class="receipt-stamp-overlay" id="rec-stamp-element">
+                    <div class="stamp-ring-inner">
+                        <div class="stamp-text-top"></div>
+                        <div class="stamp-banner-box">
+                            <h4 class="stamp-main-title">PAID</h4>
+                        </div>
+                        <div class="stamp-text-bottom"></div>
+                    </div>
+                </div>
+
+                <table class="matrix-table">
+                    <thead>
+                        <tr>
+                            <th class="m-sr">Sr</th>
+                            <th class="m-desc">Item</th>
+                            <th class="m-qty">Qty</th>
+                            <th class="m-rate">Rate</th>
+                            <th class="m-total">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rec-matrix-body"></tbody>
+                </table>
+            </div>
+            
+            <div class="receipt-divider"></div>
+            
+            <div class="summary-group">
+                <div class="receipt-split">
+                    <span>Gross Subtotal:</span>
+                    <span id="rec-subtotal">₹0.00</span>
+                </div>
+                <div class="receipt-split" style="color: #dc2626;" id="rec-discount-line">
+                    <span>Discount:</span>
+                    <span id="rec-discount-total">-₹0.00</span>
+                </div>
+                <div class="receipt-split net-payable">
+                    <span>NET PAYABLE:</span>
+                    <span id="rec-grand-total">₹0.00</span>
+                </div>
+            </div>
+            
+            <div class="receipt-divider"></div>
+            
+            <div class="receipt-footer-msg receipt-center" style="letter-spacing: 3px; font-size: 10px; margin: 12px 0 4px 0;">* SYSTEM RECORD VOUCHER *</div>
+            <p class="receipt-footer-msg receipt-center" style="font-size: 9px; text-transform: uppercase;">Thank you for visiting! Please come again.</p>
+        </div>
+    </aside>
+
+</div>
+
+<script>
+class EnterprisePOS {
+    constructor() {
+        this.storageKey = 'expense-pos-state-v1';
+        this.itemsState = [];
+        this.domElements = {
+            desc: document.getElementById('inp-desc'),
+            qty: document.getElementById('inp-qty'),
+            price: document.getElementById('inp-price'),
+            discountVal: document.getElementById('inp-discount-val'),
+            discountType: document.getElementById('inp-discount-type'),
+            ledger: document.getElementById('app-ledger-rows'),
+            receiptBody: document.getElementById('rec-matrix-body'),
+            recId: document.getElementById('rec-id'),
+            recDate: document.getElementById('rec-date'),
+            recTime: document.getElementById('rec-time'),
+            recSubtotal: document.getElementById('rec-subtotal'),
+            recDiscountTotal: document.getElementById('rec-discount-total'),
+            recTotal: document.getElementById('rec-grand-total'),
+            stampElement: document.getElementById('rec-stamp-element'),
+            form: document.getElementById('expense-form'),
+            canvasElement: document.getElementById('printable-receipt-canvas')
+        };
+        this.initStaticMetaData();
+        this.bindKeyboardFlow();
+        this.loadSavedState();
+    }
+
+    initStaticMetaData() {
+        const dateObj = new Date();
+        const securityRandBound = Math.floor(100000 + Math.random() * 900000);
+        this.domElements.recId.innerText = `EXP-${dateObj.getFullYear()}-${securityRandBound}`;
+        this.domElements.recDate.innerText = dateObj.toLocaleDateString('en-IN');
+        this.domElements.recTime.innerText = dateObj.toLocaleTimeString('en-IN', { hour12: false });
+    }
+
+    /** Enter on the phone keyboard moves to the next field: Item -> Qty -> Rate */
+    bindKeyboardFlow() {
+        const { desc, qty, price } = this.domElements;
+        [[desc, qty], [qty, price]].forEach(([fromField, toField]) => {
+            fromField.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    toField.focus();
+                }
+            });
+        });
+    }
+
+    /** Auto-save so entries survive a page reload on the phone */
+    saveState() {
+        try {
+            localStorage.setItem(this.storageKey, JSON.stringify({
+                items: this.itemsState,
+                discountVal: this.domElements.discountVal.value,
+                discountType: this.domElements.discountType.value,
+                refId: this.domElements.recId.innerText
+            }));
+        } catch (e) { /* storage not available - app still works */ }
+    }
+
+    loadSavedState() {
+        try {
+            const saved = JSON.parse(localStorage.getItem(this.storageKey) || 'null');
+            if (saved && Array.isArray(saved.items)) {
+                this.itemsState = saved.items;
+                this.domElements.discountVal.value = saved.discountVal ?? 0;
+                this.domElements.discountType.value = saved.discountType || 'percentage';
+                if (saved.refId) this.domElements.recId.innerText = saved.refId;
+            }
+        } catch (e) { /* bad saved data - start fresh */ }
+        this.syncUserInterface();
+    }
+
+    newBill() {
+        if (this.itemsState.length > 0 && !confirm('Start a new bill? All current entries will be cleared.')) return;
+        this.itemsState = [];
+        this.domElements.discountVal.value = 0;
+        this.domElements.discountType.value = 'percentage';
+        this.initStaticMetaData();
+        this.syncUserInterface();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    handleSubmission() {
+        const description = this.domElements.desc.value.trim();
+        const qty = parseFloat(this.domElements.qty.value);
+        const price = parseFloat(this.domElements.price.value);
+
+        if (!description || isNaN(qty) || qty <= 0 || isNaN(price) || price < 0) {
+            return; 
+        }
+
+        this.itemsState.push({
+            id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
+            description,
+            qty,
+            price,
+            total: qty * price
+        });
+        
+        this.syncUserInterface();
+        this.domElements.form.reset();
+        this.domElements.desc.focus();
+    }
+
+    deleteEntry(id) {
+        this.itemsState = this.itemsState.filter(item => item.id !== id);
+        this.syncUserInterface();
+    }
+
+    formatQuantity(value) {
+        return Number(value.toFixed(3)).toString();
+    }
+
+    toggleStampLayer(isActivated) {
+        this.domElements.stampElement.style.display = isActivated ? 'block' : 'none';
+    }
+
+    syncUserInterface() {
+        let runningLedgerHtml = '';
+        let runningReceiptHtml = '';
+        let grossSubtotal = 0;
+
+        this.itemsState.forEach((item, index) => {
+            grossSubtotal += item.total;
+            const displayQty = this.formatQuantity(item.qty);
+
+            runningLedgerHtml += `
+                <tr>
+                    <td><strong>${this.escapeSecurityHtml(item.description)}</strong></td>
+                    <td>${displayQty}</td>
+                    <td>₹${item.price.toFixed(2)}</td>
+                    <td><strong>₹${item.total.toFixed(2)}</strong></td>
+                    <td style="text-align: right;">
+                        <button type="button" class="btn-delete" onclick="app.deleteEntry('${item.id}')">Remove</button>
+                    </td>
+                </tr>`;
+
+            runningReceiptHtml += `
+                <tr>
+                    <td class="m-sr">${index + 1}</td>
+                    <td class="m-desc">${this.escapeSecurityHtml(item.description)}</td>
+                    <td class="m-qty">${displayQty}</td>
+                    <td class="m-rate">${item.price.toFixed(0)}</td>
+                    <td class="m-total">₹${item.total.toFixed(2)}</td>
+                </tr>`;
+        });
+
+        const discInput = parseFloat(this.domElements.discountVal.value) || 0;
+        const discType = this.domElements.discountType.value;
+        let finalCalculatedDiscount = 0;
+
+        if (discType === 'percentage') {
+            finalCalculatedDiscount = grossSubtotal * (discInput / 100);
+        } else {
+            finalCalculatedDiscount = discInput;
+        }
+
+        if (finalCalculatedDiscount > grossSubtotal) finalCalculatedDiscount = grossSubtotal;
+        if (finalCalculatedDiscount < 0) finalCalculatedDiscount = 0;
+
+        const netPayable = grossSubtotal - finalCalculatedDiscount;
+
+        this.domElements.ledger.innerHTML = runningLedgerHtml ||
+            '<tr class="empty-row"><td colspan="5">No entries yet. Add your first item above.</td></tr>';
+        this.domElements.receiptBody.innerHTML = runningReceiptHtml;
+        
+        this.domElements.recSubtotal.innerText = `₹${grossSubtotal.toFixed(2)}`;
+        this.domElements.recDiscountTotal.innerText = `-₹${finalCalculatedDiscount.toFixed(2)}`;
+        this.domElements.recTotal.innerText = `₹${netPayable.toFixed(2)}`;
+
+        this.saveState();
+    }
+
+    exportToCSV() {
+        if (this.itemsState.length === 0) {
+            alert("Export Denied: Ledger is empty.");
+            return;
+        }
+
+        let csvPayloadContent = "Sr No,Item Description,Quantity,Unit Rate,Total Price\r\n";
+        this.itemsState.forEach((item, index) => {
+            const safeDescription = `"${item.description.replace(/"/g, '""')}"`;
+            csvPayloadContent += `${index + 1},${safeDescription},${item.qty},${item.price},${item.total}\r\n`;
+        });
+
+        const dataBlobElement = new Blob([csvPayloadContent], { type: 'text/csv;charset=utf-8;' });
+        const fileDownloadAnchor = document.createElement('a');
+        fileDownloadAnchor.href = URL.createObjectURL(dataBlobElement);
+        fileDownloadAnchor.setAttribute('download', `LEDGER_LOG_${this.domElements.recId.innerText}.csv`);
+        document.body.appendChild(fileDownloadAnchor);
+        fileDownloadAnchor.click();
+        document.body.removeChild(fileDownloadAnchor);
+    }
+
+    importFromCSV(inputElement) {
+        const rawFileObj = inputElement.files[0];
+        if (!rawFileObj) return;
+
+        const fileReaderInstance = new FileReader();
+        fileReaderInstance.onload = (progressEvent) => {
+            const linesDataArray = progressEvent.target.result.split(/\r\n|\n/);
+            const verifiedImportPool = [];
+
+            for (let index = 1; index < linesDataArray.length; index++) {
+                const lineContentString = linesDataArray[index].trim();
+                if (!lineContentString) continue;
+
+                const structuralColumns = lineContentString.match(/(".*?"|[^,\s]+)(?=\s*,|\s*$)/g) || lineContentString.split(',');
+                
+                if (structuralColumns.length >= 4) {
+                    const parsedDescription = structuralColumns[1].replace(/^"|"$/g, '').trim();
+                    const parsedQuantity = parseFloat(structuralColumns[2]);
+                    const parsedRate = parseFloat(structuralColumns[3]);
+
+                    if (parsedDescription && !isNaN(parsedQuantity) && !isNaN(parsedRate)) {
+                        verifiedImportPool.push({
+                            id: crypto.randomUUID ? crypto.randomUUID() : (Date.now() + index).toString(),
+                            description: parsedDescription,
+                            qty: parsedQuantity,
+                            price: parsedRate,
+                            total: parsedQuantity * parsedRate
+                        });
+                    }
+                }
+            }
+
+            if (verifiedImportPool.length === 0) {
+                alert("Import Error: Could not read any valid rows from this CSV.");
+            } else {
+                this.itemsState = verifiedImportPool;
+                this.syncUserInterface();
+            }
+            inputElement.value = '';
+        };
+        fileReaderInstance.readAsText(rawFileObj);
+    }
+
+    /** Phone: opens share sheet (WhatsApp etc). Computer: downloads PNG. */
+    generateCapture() {
+        if (typeof html2canvas === 'undefined') {
+            alert('Screenshot tool did not load. Connect to the internet once and reopen the app.');
+            return;
+        }
+        if (document.activeElement) document.activeElement.blur();
+
+        const fileName = `${this.domElements.recId.innerText}_Voucher.png`;
+        const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
+        const renderOptions = { scale: 3, backgroundColor: '#ffffff', useCORS: true, logging: false };
+
+        html2canvas(this.domElements.canvasElement, renderOptions)
+            .then(canvas => new Promise(resolve => canvas.toBlob(resolve, 'image/png')))
+            .then(async (blob) => {
+                const file = new File([blob], fileName, { type: 'image/png' });
+
+                if (isTouchDevice && navigator.canShare && navigator.canShare({ files: [file] })) {
+                    try {
+                        await navigator.share({ files: [file], title: 'Expense Voucher' });
+                        return;
+                    } catch (err) {
+                        if (err.name === 'AbortError') return; // user closed the share menu
+                    }
+                }
+
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = fileName;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                setTimeout(() => URL.revokeObjectURL(url), 2000);
+            })
+            .catch(() => alert('Could not create the screenshot. Please try again.'));
+    }
+
+    escapeSecurityHtml(string) {
+        return String(string).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+}
+
+const app = new EnterprisePOS();
+
+/* Offline support + installable app (only works on a real website, not when opened as a file) */
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+}
+</script>
+
+</body>
+</html>
