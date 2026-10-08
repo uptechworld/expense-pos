@@ -606,13 +606,25 @@ ${s.footer ? `<div class="r-div"></div><div class="r-foot">${esc(s.footer)}</div
   }
 
   /* ---------- History ---------- */
-  renderHistory() {
+    renderHistory() {
     const q = $('h-search').value.trim().toLowerCase();
+    const itemHits = (b) => q ? b.items.filter(it => String(it.name).toLowerCase().includes(q)) : [];
     const bills = [...this.history]
       .sort((a, b) => parseLocal(b.date) - parseLocal(a.date) || (b.seq || 0) - (a.seq || 0))
-      .filter(b => !q || String(b.no).toLowerCase().includes(q) || String(b.customerName || '').toLowerCase().includes(q) || String(b.customerPhone || '').includes(q));
+      .filter(b => !q
+        || String(b.no).toLowerCase().includes(q)
+        || String(b.customerName || '').toLowerCase().includes(q)
+        || String(b.customerPhone || '').includes(q)
+        || itemHits(b).length > 0);
     if (!bills.length) { $('history-list').innerHTML = `<div class="card empty mt14">${esc(this.t(q ? 'noResults' : 'noHistory'))}</div>`; return; }
     let html = '', lastDay = '';
+    if (q) {
+      const allHits = bills.flatMap(itemHits);
+      if (allHits.length) {
+        const sum = allHits.reduce((s, it) => s + (Number(it.amount) || 0), 0);
+        html += `<div class="card mt14" style="display:flex;justify-content:space-between;gap:10px;font-weight:700"><span>🔍 "${esc($('h-search').value.trim())}" · ${allHits.length}×</span><span>${money(sum)}</span></div>`;
+      }
+    }
     bills.forEach(b => {
       const d = parseLocal(b.date), tot = this.calc(b);
       const day = d.toLocaleDateString(this.uiLocale(), { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
@@ -620,9 +632,11 @@ ${s.footer ? `<div class="r-div"></div><div class="r-foot">${esc(s.footer)}</div
       const badges = (b.id === this.bill.id ? `<span class="badge cur">${esc(this.t('current'))}</span>` : '')
         + (b.payMode === 'Credit' ? `<span class="badge credit">${esc(this.payLabel('Credit'))}</span>` : '');
       const time = d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+      const hits = itemHits(b).map(it => `${esc(it.name)} ${fmtQty(it.qty)} ${unitOf(it.unit).label} = ${money(it.amount)}`).join(', ');
       html += `<button class="bill-card" data-bill="${esc(b.id)}">
         <span class="b-left"><span class="b-no">${esc(b.no)}${badges}</span>
-        <span class="b-meta">${time} · ${tot.count} ${esc(this.t('itemsCount'))}${b.customerName ? ' · ' + esc(b.customerName) : ''}</span></span>
+        <span class="b-meta">${time} · ${tot.count} ${esc(this.t('itemsCount'))}${b.customerName ? ' · ' + esc(b.customerName) : ''}</span>
+        ${hits ? `<span class="b-meta" style="color:var(--primary);font-weight:600">🔍 ${hits}</span>` : ''}</span>
         <span class="b-right"><span class="b-amt">${money(tot.total)}</span><span class="b-meta">${esc(this.payLabel(b.payMode || 'Cash'))}</span></span>
       </button>`;
     });
@@ -836,3 +850,4 @@ const app = new POSApp();
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 }
+if (navigator.storage && navigator.storage.persist) navigator.storage.persist();
