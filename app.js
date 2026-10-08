@@ -1,12 +1,12 @@
 /* ============ Billing POS - app.js ============ */
 const UNITS = {
-  kg:    { label: 'kg',    factor: 1,     per: 'kg' },
-  g:     { label: 'g',     factor: 0.001, per: 'kg' },
-  L:     { label: 'L',     factor: 1,     per: 'L' },
-  ml:    { label: 'ml',    factor: 0.001, per: 'L' },
-  pcs:   { label: 'pcs',   factor: 1,     per: 'pc' },
-  dozen: { label: 'dozen', factor: 1,     per: 'dozen' },
-  pkt:   { label: 'pkt',   factor: 1,     per: 'pkt' }
+  kg:    { label: 'kg',  opt: 'kg',    factor: 1,      per: 'kg' },
+  g:     { label: 'g',   opt: 'g',     factor: 0.001,  per: 'kg' },
+  L:     { label: 'L',   opt: 'L',     factor: 1,      per: 'L' },
+  ml:    { label: 'ml',  opt: 'ml',    factor: 0.001,  per: 'L' },
+  pcs:   { label: 'pcs', opt: 'pcs',   factor: 1,      per: 'pc' },
+  dozen: { label: 'pcs', opt: 'dozen', factor: 1 / 12, per: 'dozen' },
+  pkt:   { label: 'pkt', opt: 'pkt',   factor: 1,      per: 'pkt' }
 };
 const PAY_MODES = ['Cash', 'UPI', 'Card', 'Credit'];
 const RECEIPT_PAY = { Cash: 'Cash', UPI: 'UPI', Card: 'Card', Credit: 'Credit (Udhaar)' };
@@ -149,7 +149,7 @@ class POSApp {
 
   /* ---------- Events ---------- */
   fillUnitSelects() {
-    const opts = Object.keys(UNITS).map(k => `<option value="${k}">${UNITS[k].label}</option>`).join('');
+    const opts = Object.keys(UNITS).map(k => `<option value="${k}">${UNITS[k].opt}</option>`).join('');
     $('f-unit').innerHTML = opts;
     $('e-unit').innerHTML = opts;
     $('f-unit').value = 'kg';
@@ -375,9 +375,12 @@ class POSApp {
     this.updateRateLabels();
     this.updateAddButton();
   }
-  updateRateLabels() {
-    [['f-rate-label', 'f-unit'], ['e-rate-label', 'e-unit']].forEach(([labelId, unitId]) => {
-      $(labelId).textContent = `${this.t('rate')} (₹/${unitOf($(unitId).value || 'kg').per})`;
+      updateRateLabels() {
+    [['f-rate-label', 'f-unit', 'f-qty'], ['e-rate-label', 'e-unit', 'e-qty']].forEach(([labelId, unitId, qtyId]) => {
+      const key = $(unitId).value || 'kg';
+      $(labelId).textContent = `${this.t('rate')} (₹/${unitOf(key).per})`;
+      const qtyLabel = document.querySelector(`label[for="${qtyId}"]`);
+      if (qtyLabel) qtyLabel.textContent = key === 'dozen' ? `${this.t('qty')} (pcs)` : this.t('qty');
     });
   }
   updateAddButton() {
